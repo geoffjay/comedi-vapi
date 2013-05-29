@@ -45,6 +45,15 @@ namespace Comedi {
     public static int rf_unit (int flags);
 
     /*
+     * Constants
+     */
+    [CCode (cprefix = "COMEDI_", cheader_filename = "comedi.h")]
+    public const int NAMELEN;
+
+    [CCode (cprefix = "COMEDI_", cheader_filename = "comedi.h")]
+    public const int NDEVCONFOPTS;
+
+    /*
      * Device configuration
      */
     [CCode(cprefix = "COMEDI_DEVCONF_AUX_", cheader_filename = "comedi.h")]
@@ -289,7 +298,7 @@ namespace Comedi {
         OVERFLOW
     }
 
-    [CCode (cprefix = "COMEDI_OOR_", cheader_filename = "comedi.h")]
+    [CCode (cprefix = "COMEDI_OOR_", cheader_filename = "comedilib.h")]
     public enum OorBehavior {
         NUMBER,
         NAN
@@ -297,131 +306,131 @@ namespace Comedi {
 
     [CCode (cname = "comedi_trig", cheader_filename = "comedi.h")]
     public class Trigger {
-        uint subdev;
-        uint mode;
-        uint flags;
-        uint n_chan;
-        uint[] chanlist;
-        uint16[] data;
-        uint n;
-        uint trigsrc;
-        uint trigvar;
-        uint trigvar1;
-        uint data_len;
-        uint unused[3];
+        public uint subdev;
+        public uint mode;
+        public uint flags;
+        public uint n_chan;
+        public uint[] chanlist;
+        public uint16[] data;
+        public uint n;
+        public uint trigsrc;
+        public uint trigvar;
+        public uint trigvar1;
+        public uint data_len;
+        public uint unused[3];
     }
 
     [CCode (cname = "comedi_cmd", cheader_filename = "comedi.h")]
     public class Command {
-        uint subdev;
-        uint flags;
-        uint start_src;
-        uint start_arg;
-        uint scan_begin_src;
-        uint scan_begin_arg;
-        uint convert_src;
-        uint convert_arg;
-        uint scan_end_src;
-        uint scan_end_arg;
-        uint stop_src;
-        uint stop_arg;
-        uint[] chanlist;
-        uint chanlist_len;
-        uint16[] data;
-        uint data_len;
+        public uint subdev;
+        public uint flags;
+        public uint start_src;
+        public uint start_arg;
+        public uint scan_begin_src;
+        public uint scan_begin_arg;
+        public uint convert_src;
+        public uint convert_arg;
+        public uint scan_end_src;
+        public uint scan_end_arg;
+        public uint stop_src;
+        public uint stop_arg;
+        public uint[] chanlist;
+        public uint chanlist_len;
+        public uint16[] data;
+        public uint data_len;
     }
 
     [CCode (cname = "comedi_insn", cheader_filename = "comedi.h")]
     public class Instruction {
-        uint insn;
-        uint n;
-        uint *data;
-        uint subdev;
-        uint chanspec;
-        uint unused[3];
+        public uint insn;
+        public uint n;
+        public uint *data;
+        public uint subdev;
+        public uint chanspec;
+        public uint unused[3];
     }
 
     [CCode (cname = "comedi_insnlist", cheader_filename = "comedi.h")]
     public class InstructionList {
-        uint n_insns;
-        Instruction[] insns;
+        public uint n_insns;
+        public Instruction[] insns;
     }
 
     [CCode (cname = "comedi_chaninfo", cheader_filename = "comedi.h")]
     public class ChannelInfo {
-        uint subdev;
-        uint[] maxdata_list;
-        uint[] flaglist;
-        uint[] rangelist;
-        uint unused[4];
+        public uint subdev;
+        public uint[] maxdata_list;
+        public uint[] flaglist;
+        public uint[] rangelist;
+        public uint unused[4];
     }
 
     [CCode (cname = "comedi_subdinfo", cheader_filename = "comedi.h")]
     public class SubdeviceInfo {
-        uint type;
-        uint n_chan;
-        uint subd_flags;
-        uint timer_type;
-        uint len_chanlist;
-        uint maxdata;
-        uint flags;
-        uint range_type;
-        uint settling_time_0;
-        uint unused[9];
+        public uint type;
+        public uint n_chan;
+        public uint subd_flags;
+        public uint timer_type;
+        public uint len_chanlist;
+        public uint maxdata;
+        public uint flags;
+        public uint range_type;
+        public uint settling_time_0;
+        public uint unused[9];
     }
 
     [CCode (cname = "comedi_devinfo", cheader_filename = "comedi.h")]
     public class DeviceInfo {
-        uint version_code;
-        uint n_subdevs;
-        char driver_name[COMEDI_NAMELEN];
-        char board_name[COMEDI_NAMELEN];
-        int read_subdevice;
-        int write_subdevice;
-        int unused[30];
+        public uint version_code;
+        public uint n_subdevs;
+        public char driver_name[20];       /* had to change NAMELEN -> 20 */
+        public char board_name[20];        /* had to change NAMELEN -> 20 */
+        public int read_subdevice;
+        public int write_subdevice;
+        public int unused[30];
     }
 
     [CCode (cname = "comedi_devconfig", cheader_filename = "comedi.h")]
     public class DeviceConfig {
-        char board_name[COMEDI_NAMELEN];
-        int options[COMEDI_NDEVCONFOPTS];
+        public char board_name[20];        /* had to change NAMELEN -> 20 */
+        public int options[32];            /* had to change NDEVCONFOPTS -> 32 */
     }
 
     [CCode (cname = "comedi_rangeinfo", cheader_filename = "comedi.h")]
     public class RangeInfo {
-        uint range_type;
-        void *range_ptr;
+        public uint range_type;
+        public void *range_ptr;
     }
 
     [CCode (cname = "comedi_krange", cheader_filename = "comedi.h")]
     public class KRange {
-        int min;
-        int max;
-        uint flags;
+        public int min;
+        public int max;
+        public uint flags;
     }
 
     [CCode (cname = "comedi_bufconfig", cheader_filename = "comedi.h")]
     public class BufferConfig {
-        uint subdevice;
-        uint flags;
-        uint maximum_size;
-        uint size;
-        uint unused[4];
+        public uint subdevice;
+        public uint flags;
+        public uint maximum_size;
+        public uint size;
+        public uint unused[4];
     }
 
     [CCode (cname = "comedi_bufinfo", cheader_filename = "comedi.h")]
     public class BufferInfo {
-        uint subdevice;
-        uint bytes_read;
-        uint buf_write_ptr;
-        uint buf_read_ptr;
-        uint buf_write_count;
-        uint buf_read_count;
-        uint bytes_written;
-        uint unused[4];
+        public uint subdevice;
+        public uint bytes_read;
+        public uint buf_write_ptr;
+        public uint buf_read_ptr;
+        public uint buf_write_count;
+        public uint buf_read_count;
+        public uint bytes_written;
+        public uint unused[4];
     }
 
-    [CCode (cname = "comedi_range", cheader_filename = "comedi.h")]
+    [CCode (cname = "comedi_range", cheader_filename = "comedi.h", unref_function = "")]
     public class Range {
         public double min;
         public double max;
@@ -446,7 +455,7 @@ namespace Comedi {
     /*
      * Device
      */
-    [CCode (cname = "comedi_t", cprefix = "comedi_", unref_function = "", free_function = "comedi_close")]
+    [CCode (cname = "comedi_t", cprefix = "comedi_", cheader_filename = "comedilib.h", unref_function = "", free_function = "comedi_close")]
     public class Device {
         [CCode (cname = "comedi_open")]
         public Device (string fn);
@@ -469,49 +478,49 @@ namespace Comedi {
         public int maxdata_is_chan_specific (uint subdevice);
 
         /* channel queries */
-        uint get_maxdata (uint subdevice, uint chan);
-        int get_n_ranges (uint subdevice, uint chan);
-        Range get_range (uint subdevice, uint chan, uint range);
-        int find_range (uint subd, uint chan, uint unit, double min, double max);
+        public uint get_maxdata (uint subdevice, uint chan);
+        public int get_n_ranges (uint subdevice, uint chan);
+        public Range get_range (uint subdevice, uint chan, uint range);
+        public int find_range (uint subd, uint chan, uint unit, double min, double max);
 
         /* buffer queries */
-        int get_buffer_size (uint subdevice);
-        int get_max_buffer_size (uint subdevice);
-        int set_buffer_size (uint subdevice, uint len);
+        public int get_buffer_size (uint subdevice);
+        public int get_max_buffer_size (uint subdevice);
+        public int set_buffer_size (uint subdevice, uint len);
 
         /* low-level */
-        int do_insnlist (comedi_insnlist *il);
-        int do_insn (comedi_insn *insn);
-        int lock (uint subdevice);
-        int unlock (uint subdevice);
+        public int do_insnlist (InstructionList il);
+        public int do_insn (Instruction insn);
+        public int lock (uint subdevice);
+        public int unlock (uint subdevice);
 
         /* syncronous */
-        int data_read (uint subd, uint chan, uint range, uint aref, [CCode (array_length = false)] uint[] data);
-        int data_read_n (uint subd, uint chan, uint range, uint aref, [CCode (array_length = false)] uint[] data, uint n);
-        int data_read_hint (uint subd, uint chan, uint range, uint aref);
-        int data_read_delayed (uint subd, uint chan, uint range, uint aref, [CCode (array_length = false)] uint[] data, uint nano_sec);
-        int data_write (uint subd, uint chan, uint range, uint aref, uint data);
-        int dio_config (uint subd, uint chan, uint dir);
-        int dio_get_config (uint subd, uint chan, [CCode (array_length = false)] uint[] dir);
-        int dio_read (uint subd, uint chan, [CCode (array_length = false)] uint[] bit);
-        int dio_write (uint subd, uint chan, uint bit);
-        int dio_bitfield2 (uint subd, uint write_mask, [CCode (array_length = false)] uint[] bits, uint base_channel);
-        int dio_bitfield (uint subd, uint write_mask, [CCode (array_length = false)] uint[] bits);
+        public int data_read (uint subd, uint chan, uint range, uint aref, [CCode (array_length = false)] uint[] data);
+        public int data_read_n (uint subd, uint chan, uint range, uint aref, [CCode (array_length = false)] uint[] data, uint n);
+        public int data_read_hint (uint subd, uint chan, uint range, uint aref);
+        public int data_read_delayed (uint subd, uint chan, uint range, uint aref, [CCode (array_length = false)] uint[] data, uint nano_sec);
+        public int data_write (uint subd, uint chan, uint range, uint aref, uint data);
+        public int dio_config (uint subd, uint chan, uint dir);
+        public int dio_get_config (uint subd, uint chan, [CCode (array_length = false)] uint[] dir);
+        public int dio_read (uint subd, uint chan, [CCode (array_length = false)] uint[] bit);
+        public int dio_write (uint subd, uint chan, uint bit);
+        public int dio_bitfield2 (uint subd, uint write_mask, [CCode (array_length = false)] uint[] bits, uint base_channel);
+        public int dio_bitfield (uint subd, uint write_mask, [CCode (array_length = false)] uint[] bits);
 
         /* streaming I/O (commands) */
-        int get_cmd_src_mask (uint subdevice, Command cmd);
-        int get_cmd_generic_timed (uint subdevice, Command cmd, unsigned chanlist_len, unsigned scan_period_ns);
-        int cancel (uint subdevice);
-        int command (Command cmd);
-        int command_test (Command cmd);
-        int poll (uint subdevice);
+        public int get_cmd_src_mask (uint subdevice, Command cmd);
+        public int get_cmd_generic_timed (uint subdevice, Command cmd, uint chanlist_len, uint scan_period_ns);
+        public int cancel (uint subdevice);
+        public int command (Command cmd);
+        public int command_test (Command cmd);
+        public int poll (uint subdevice);
 
         /* buffer control */
-        int set_max_buffer_size (uint subdev, uint max_size);
-        int get_buffer_contents (uint subdev);
-        int mark_buffer_read (uint subdev, uint bytes);
-        int mark_buffer_written (uint subdev, uint bytes);
-        int get_buffer_offset (uint subdev);
+        public int set_max_buffer_size (uint subdev, uint max_size);
+        public int get_buffer_contents (uint subdev);
+        public int mark_buffer_read (uint subdev, uint bytes);
+        public int mark_buffer_written (uint subdev, uint bytes);
+        public int get_buffer_offset (uint subdev);
     }
 
     /*
