@@ -463,8 +463,8 @@ namespace Comedi {
         public int close ();
         public int get_n_subdevices ();
         public int get_version_code ();
-        public string get_driver_name ();
-        public string get_board_name ();
+        public unowned string get_driver_name ();
+        public unowned string get_board_name ();
         public int get_read_subdevice ();
         public int get_write_subdevice ();
         public int fileno ();
