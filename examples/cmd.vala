@@ -1,21 +1,22 @@
 using Comedi;
 using Posix;
 
-class AsynchAcquisition : Glib.Object {
+class AsynchAcquisition : GLib.Object {
 
     private Device dev;
     private int subdevice;
     private Command cmd;
     const int BUFSZ = 10000;
-    char buf[BUFSZ];
-    const N_CHANS = 256;
-    static unsigned int chanlist[N_CHANS];
-    private Range range_info[N_CHANS];
-    private uint maxdata[N_CHANS];
+    char[] buf = new char[BUFSZ];
+    const int N_CHANS = 256;
+    uint[] chanlist = new uint[N_CHANS];
+    private Range[] range_info = new Range[N_CHANS];
+    private uint[] maxdata = new uint[N_CHANS];
     int ret;
     int total=0;
     int i;
-    struct TimeVal start,end;
+    TimeVal start;
+    TimeVal end;
     int subdev_flags;
     uint raw;
     int n_chan = 4;
@@ -29,20 +30,14 @@ class AsynchAcquisition : Glib.Object {
         "source conflict",
         "invalid argument",
         "argument conflict",
-        "invalid chanlist",
-    }
-    double freq = 100.0;
+        "invalid chanlist"
+    };
+    int scan_period_nanosec = 10000000;
     bool is_physical = true;
-
-    int prepare_cmd_lib(uint period_nanosec, Command cmd);
-    int prepare_cmd(uint period_nanosec, Command cmd)
-    void print_datum(uint raw, int channel_index, short physical);
 
     public void run () {
         /* open the device */
         dev = new Device ("/dev/comedi0");
-        start = new TimeVal ();
-        stop = new TimeVal ();
         subdevice = 0;
         // Print numbers for clipped inputs
         set_global_oor_behavior (OorBehavior.NUMBER);
@@ -55,7 +50,7 @@ class AsynchAcquisition : Glib.Object {
         /* prepare_cmd_lib() uses a Comedilib routine to find a
         * good command for the device.  prepare_cmd() explicitly
         * creates a command, which may not work for your device. */
-        prepare_cmd_lib (n_scan, n_chan, 1e9 / freq, cmd);
+        prepare_cmd_lib (n_scan, n_chan, scan_period_nanosec, cmd);
         message ("command before testing:\n");
         dump_cmd(cmd);
         /* comedi_command_test() tests a command to see if the
@@ -71,25 +66,25 @@ class AsynchAcquisition : Glib.Object {
         ret = dev.command_test(cmd);
         if(ret < 0){
             perror("command_test");
-            if(errno == EIO){
-                critical ("Ummm... this subdevice doesn't support commands\n");
-            }
+            //if (Comedi.errno == EIO){
+            //    critical ("Ummm... this subdevice doesn't support commands\n");
+            //}
         }
         message ("first test returned %d (%s)\n", ret, cmdtest_messages[ret]);
         dump_cmd(cmd);
-        ret = command_test(dev, cmd);
+        ret = dev.command_test(cmd);
         if(ret < 0){
             perror("command_test");
         }
-        fprintf(stderr,"second test returned %d (%s)\n", ret,
+        message ("second test returned %d (%s)\n", ret,
                 cmdtest_messages[ret]);
-        if(ret!=0){
-            dump_cmd(stderr, cmd);
+        if(ret!=0) {
+            dump_cmd(cmd);
             critical ("Error preparing command\n");
         }
 
         /* this is only for informational purposes */
-        Posix.start.get_current_time();
+        start.get_current_time();
         message ("start time: %ld.%06ld\n", start.tv_sec, start.tv_usec);
 
         /* start the command */
@@ -98,42 +93,44 @@ class AsynchAcquisition : Glib.Object {
             perror("command");
         }
         subdev_flags = dev.get_subdevice_flags (subdevice);
-        while(1){
-            ret = Posix.read (dev.fileno(), buf, BUFSZ);
+        while(true) {
+            ret = (int)Posix.read (dev.fileno(), buf, BUFSZ);
             if(ret < 0) {
                 /* some error occurred */
                 perror("read");
                 break;
-            } else if(ret == 0){
+            } else if (ret == 0) {
                 /* reached stop condition */
                 break;
             } else {
-                static int col = 0;
-                int bytes_per_sample;
+                int col;
+                ulong bytes_per_sample;
+
+                col = 0;
                 total += ret;
                 message ("read %d %d\n", ret, total);
-                if(subdev_flags & SubdeviceFlag.LSAMPL)
+                if((subdev_flags & SubdeviceFlag.LSAMPL) != 0)
                     bytes_per_sample = sizeof (uint);
                 else
                     bytes_per_sample = sizeof (ushort);
                 for (i = 0; i < ret / bytes_per_sample; i++) {
-                    if (subdev_flags & SubdeviceFlag.LSAMPL) {
-                        raw = ((uint)buf)[i];
+                    if ((subdev_flags & SubdeviceFlag.LSAMPL) != 0) {
+                        raw = (uint) buf[i];
                     } else {
-                        raw = ((ushort)buf)[i];
+                        raw = (ushort) buf[i];
                     }
                     print_datum (raw, col, is_physical);
                     col++;
                     if(col == n_chan){
                         message ("\n");
-                        col=0;
+                        col = 0;
                     }
                 }
             }
         }
 
         /* this is only for informational purposes */
-        Posix.end.get_current_time ();
+        end.get_current_time ();
         message ("end time: %ld.%06ld\n", end.tv_sec, end.tv_usec);
 
         end.tv_sec -= start.tv_sec;
@@ -143,30 +140,27 @@ class AsynchAcquisition : Glib.Object {
         }
         end.tv_usec -= start.tv_usec;
         message ("time: %ld.%06ld\n", end.tv_sec, end.tv_usec);
-
-        return 0;
     }
 
     /*
     * This prepares a command in a pretty generic way.  We ask the
     * library to create a stock command that supports periodic
     * sampling of data, then modify the parts we want. */
-    int prepare_cmd_lib(int n_scan, int n_chan, unsigned scan_period_nanosec, Command cmd)
-    {
+    int prepare_cmd_lib (int n_scan, int n_chan, uint scan_period_nanosec, Command cmd) {
         int ret;
         /* This comedilib function will get us a generic timed
         * command for a particular board.  If it returns -1,
         * that's bad. */
         ret = dev.get_cmd_generic_timed(subdevice, cmd, n_chan, scan_period_nanosec);
-        if(ret<0){
-            printf("comedi_get_cmd_generic_timed failed\n");
+        if (ret < 0) {
+            message ("comedi_get_cmd_generic_timed failed\n");
             return ret;
         }
 
         /* Modify parts of the command */
         cmd.chanlist = chanlist;
         cmd.chanlist_len = n_chan;
-        if(cmd.stop_src == TRIG_COUNT) cmd.stop_arg = n_scan;
+        if (cmd.stop_src == TriggerSource.COUNT) cmd.stop_arg = n_scan;
 
         return 0;
     }
@@ -175,15 +169,14 @@ class AsynchAcquisition : Glib.Object {
     * Set up a command by hand.  This will not work on some devices.
     * There is no single command that will work on all devices.
     */
-    int prepare_cmd(comedi_t *dev, int subdevice, int n_scan, int n_chan, unsigned period_nanosec, comedi_cmd *cmd)
+    int prepare_cmd(int n_scan, int n_chan, uint period_nanosec, Command cmd)
     {
-        memset(cmd,0,sizeof(*cmd));
 
         /* the subdevice that the command is sent to */
-        cmd->subdev =	subdevice;
+        cmd.subdev =	subdevice;
 
         /* flags */
-        cmd->flags = 0;
+        cmd.flags = 0;
 
         /* Wake up at the end of every scan */
         //cmd->flags |= TRIG_WAKE_EOS;
@@ -210,8 +203,8 @@ class AsynchAcquisition : Glib.Object {
         *               which is typically caused by an INSN_TRIG
         *               instruction.
         */
-        cmd->start_src =	TRIG_NOW;
-        cmd->start_arg =	0;
+        cmd.start_src =	TriggerSource.NOW;
+        cmd.start_arg =	0;
 
         /* The timing of the beginning of each scan is controlled by
         * scan_begin.
@@ -227,8 +220,8 @@ class AsynchAcquisition : Glib.Object {
         * The scan_begin_arg that we use here may not be supported exactly
         * by the device, but it will be adjusted to the nearest supported
         * value by comedi_command_test(). */
-        cmd->scan_begin_src =	TRIG_TIMER;
-        cmd->scan_begin_arg = period_nanosec;		/* in ns */
+        cmd.scan_begin_src =	TriggerSource.TIMER;
+        cmd.scan_begin_arg = period_nanosec;		/* in ns */
 
         /* The timing between each sample in a scan is controlled by convert.
         * TRIG_TIMER:   Conversion events occur periodically.
@@ -241,16 +234,16 @@ class AsynchAcquisition : Glib.Object {
         * TRIG_NOW:     All conversion events in a scan occur simultaneously.
         * Even though it is invalid, we specify 1 ns here.  It will be
         * adjusted later to a valid value by comedi_command_test() */
-        cmd->convert_src =	TRIG_TIMER;
-        cmd->convert_arg =	1;		/* in ns */
+        cmd.convert_src =	TriggerSource.TIMER;
+        cmd.convert_arg =	1;		/* in ns */
 
         /* The end of each scan is almost always specified using
         * TRIG_COUNT, with the argument being the same as the
         * number of channels in the chanlist.  You could probably
         * find a device that allows something else, but it would
         * be strange. */
-        cmd->scan_end_src =	TRIG_COUNT;
-        cmd->scan_end_arg =	n_chan;		/* number of channels */
+        cmd.scan_end_src =	TriggerSource.COUNT;
+        cmd.scan_end_arg =	n_chan;		/* number of channels */
 
         /* The end of acquisition is controlled by stop_src and
         * stop_arg.
@@ -258,31 +251,54 @@ class AsynchAcquisition : Glib.Object {
         * TRIG_NONE:   continuous acquisition, until stopped using
         *              comedi_cancel()
         * */
-        cmd->stop_src =		TRIG_COUNT;
-        cmd->stop_arg =		n_scan;
+        cmd.stop_src =		TriggerSource.COUNT;
+        cmd.stop_arg =		n_scan;
 
         /* the channel list determined which channels are sampled.
         In general, chanlist_len is the same as scan_end_arg.  Most
         boards require this.  */
-        cmd->chanlist =		chanlist;
-        cmd->chanlist_len =	n_chan;
+        cmd.chanlist =		chanlist;
+        cmd.chanlist_len =	n_chan;
 
         return 0;
     }
-    void dump_cmd()
+
+    string cmd_src (uint src, string buf)
     {
-        message ("subdevice:      %d\n", cmd.subdev);
-        message ("start:      %-8s %d\n", cmd_src(cmd.start_src,buf), cmd.start_arg);
-        message ("scan_begin: %-8s %d\n", cmd_src(cmd.scan_begin_src,buf), cmd.scan_begin_arg);
-        message ("convert:    %-8s %d\n", cmd_src(cmd.convert_src,buf), cmd.convert_arg);
-        message ("scan_end:   %-8s %d\n", cmd_src(cmd.scan_end_src,buf), cmd.scan_end_arg);
-        message ("stop:       %-8s %d\n", cmd_src(cmd.stop_src,buf), cmd.stop_arg);
+        buf[0]=0;
+
+        if ((src & TriggerSource.NONE) != 0) strcat (buf, "none|");
+        if ((src & TriggerSource.NOW) != 0) strcat (buf, "now|");
+        if ((src & TriggerSource.FOLLOW) != 0) strcat (buf, "follow|");
+        if ((src & TriggerSource.TIME) != 0) strcat (buf, "time|");
+        if ((src & TriggerSource.TIMER) != 0) strcat (buf, "timer|");
+        if ((src & TriggerSource.COUNT) != 0) strcat (buf, "count|");
+        if ((src & TriggerSource.EXT) != 0) strcat (buf, "ext|");
+        if ((src & TriggerSource.INT) != 0) strcat (buf, "int|");
+        if ((src & TriggerSource.OTHER) != 0) strcat (buf, "other|");
+
+        if (strlen (buf) == 0) {
+            sprintf (buf, "unknown(0x%08x)", src);
+        } else {
+            buf[strlen(buf)-1]=0;
+        }
+
+        return buf;
     }
 
-    void print_datum(uint raw, int channel_index, short is_physical) {
+    void dump_cmd (Command cmd) {
+        message ("subdevice:      %u\n", cmd.subdev);
+        message ("start:      %-8s %u\n", cmd_src (cmd.start_src, buf), cmd.start_arg);
+        message ("scan_begin: %-8s %u\n", cmd_src (cmd.scan_begin_src, buf), cmd.scan_begin_arg);
+        message ("convert:    %-8s %u\n", cmd_src (cmd.convert_src, buf), cmd.convert_arg);
+        message ("scan_end:   %-8s %u\n", cmd_src (cmd.scan_end_src, buf), cmd.scan_end_arg);
+        message ("stop:       %-8s %u\n", cmd_src (cmd.stop_src, buf), cmd.stop_arg);
+    }
+
+    void print_datum (uint raw, int channel_index, bool is_physical) {
         double physical_value;
         if(!is_physical) {
-            message ("%d ",raw);
+            message ("%u ",raw);
         } else {
             physical_value = to_phys (raw, range_info[channel_index], maxdata[channel_index]);
             message ("%#8.6g ", physical_value);
@@ -293,7 +309,7 @@ class AsynchAcquisition : Glib.Object {
 
 public static int main (string[] args) {
 
-    AsynchAcquisition app = new AsynchAquisition ();
+    AsynchAcquisition app = new AsynchAcquisition ();
     app.run();
     return 0;
 }
