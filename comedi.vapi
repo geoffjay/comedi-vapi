@@ -320,8 +320,14 @@ namespace Comedi {
         public uint unused[3];
     }
 
-    [CCode (cname = "comedi_cmd", cheader_filename = "comedi.h")]
-    public class Command {
+    //[CCode (cname = "comedi_cmd", cheader_filename = "comedi.h", unref_function = "")]
+    //public class Command {
+        //[CCode (cname = "g_new0")]
+        //public Command (ulong size = sizeof (Command));
+
+    [CCode (cname = "comedi_cmd", cheader_filename = "comedi.h", destroy_function = "")]
+    public struct Command {
+
         public uint subdev;
         public uint flags;
         public uint start_src;
@@ -334,6 +340,7 @@ namespace Comedi {
         public uint scan_end_arg;
         public uint stop_src;
         public uint stop_arg;
+        [CCode (array_length = false)]
         public uint[] chanlist;
         public uint chanlist_len;
         public uint16[] data;
@@ -509,7 +516,7 @@ namespace Comedi {
 
         /* streaming I/O (commands) */
         public int get_cmd_src_mask (uint subdevice, Command cmd);
-        public int get_cmd_generic_timed (uint subdevice, Command cmd, uint chanlist_len, uint scan_period_ns);
+        public int get_cmd_generic_timed (uint subdevice, out Command cmd, uint chanlist_len, uint scan_period_ns);
         public int cancel (uint subdevice);
         public int command (Command cmd);
         public int command_test (Command cmd);
