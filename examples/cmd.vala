@@ -33,7 +33,7 @@ class AsynchAcquisition : GLib.Object {
         "invalid chanlist"
     };
     int scan_period_nanosec = 1000000;
-    bool is_physical = false;
+    bool is_physical = true;
 
     public void run () {
         /* open the device */
