@@ -7,7 +7,7 @@ class AsynchAcquisition : GLib.Object {
     int subdevice;
     Command cmd = Command ();
     const int BUFSZ = 10000;
-    char[] buf = new char[BUFSZ];
+    ushort[] buf = new ushort[BUFSZ];
     const int N_CHANS = 256;
     uint[] chanlist = new uint[N_CHANS];
     Range[] range_info = new Range[N_CHANS];
@@ -19,8 +19,8 @@ class AsynchAcquisition : GLib.Object {
     TimeVal end;
     int subdev_flags;
     uint raw;
-    int n_chan = 4;
-    int n_scan = 100;
+    int n_chan = 1;
+    int n_scan = 10;
     int range = 5;
     int channel = 0; // The start channel.
     int aref = AnalogReference.GROUND;
@@ -32,8 +32,8 @@ class AsynchAcquisition : GLib.Object {
         "argument conflict",
         "invalid chanlist"
     };
-    int scan_period_nanosec = 10000000;
-    bool is_physical = true;
+    int scan_period_nanosec = 1000000;
+    bool is_physical = false;
 
     public void run () {
         /* open the device */
@@ -77,7 +77,7 @@ class AsynchAcquisition : GLib.Object {
             }
         }
 
-        message ("first test returned %d (%s)", ret, cmdtest_messages[ret]);
+        message ("first test returned %d (%s)", (int)ret, cmdtest_messages[ret]);
         dump_cmd (cmd);
 
         ret = dev.command_test (cmd);
@@ -85,7 +85,7 @@ class AsynchAcquisition : GLib.Object {
             perror ("command_test");
         }
 
-        message ("second test returned %d (%s)", ret,
+        message ("second test returned %d (%s)",(int) ret,
                  cmdtest_messages[ret]);
 
         if (ret != 0) {
@@ -125,15 +125,18 @@ class AsynchAcquisition : GLib.Object {
                     bytes_per_sample = sizeof (uint);
                 else
                     bytes_per_sample = sizeof (ushort);
-                for (i = 0; i < ret / bytes_per_sample; i++) {
-                    if ((subdev_flags & SubdeviceFlag.LSAMPL) != 0) {
-                        raw = (uint) buf[i];
-                    } else {
+                for (i = 0; i < ret / 2; i++) { //i < ret / bytes_per_sample; i++) {
+                    //if ((subdev_flags & SubdeviceFlag.LSAMPL) != 0) {
+                    //    raw = (uint) buf[i];
+                    //}
+                    //else {
                         raw = (ushort) buf[i];
-                    }
+                        //printf ("buf[%d]: %d\n", i, buf[i]);
+                    //}
                     print_datum (raw, col, is_physical);
                     col++;
                     if (col == n_chan) {
+                        printf("\n");
                         col = 0;
                     }
                 }
@@ -307,10 +310,10 @@ class AsynchAcquisition : GLib.Object {
     private void print_datum (uint raw, int channel_index, bool is_physical) {
         double physical_value;
         if (!is_physical) {
-            message ("%u ",raw);
+            printf ("%u ",raw);
         } else {
             physical_value = to_phys (raw, range_info[channel_index], maxdata[channel_index]);
-            message ("%#8.6g ", physical_value);
+            printf ("%#8.6g ", physical_value);
         }
     }
 }
