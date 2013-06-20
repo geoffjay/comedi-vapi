@@ -9,10 +9,10 @@ class ReadChannel : GLib.Object {
     private double physical_value;
 
     public void run () {
-        dev = new Device ("/dev/comedi0");
-        dev.data_read (0, 0, 2, AnalogReference.GROUND, data);
+        dev = new Device ("/dev/comedi1");
+        dev.data_read (0, 0, 0, AnalogReference.GROUND, data);
         set_global_oor_behavior (OorBehavior.NAN);
-        range_info = dev.get_range (0, 0, 2);
+        range_info = dev.get_range (0, 0, 0);
         maxdata = dev.get_maxdata (0, 0);
         physical_value = to_phys (data[0], range_info, maxdata);
         stdout.printf ("%g", physical_value);
