@@ -358,8 +358,9 @@ namespace Comedi {
     }
 
     [CCode (cname = "comedi_insnlist", cheader_filename = "comedi.h")]
-    public class InstructionList {
+    public struct InstructionList {
         public uint n_insns;
+        [CCode (array_length = false)]
         public Instruction[] insns;
     }
 
