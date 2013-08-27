@@ -18,16 +18,12 @@ public class InstructionAcquisition : GLib.Object {
         if (dev != null) {
             perror ("/dev/comedi0");
         }
-        il.n_insns = 3;
-        il.insns = insn;
         /**
          * Instruction to get the time of day.
          **/
         insn[0].insn =  InstructionAttribute.GTOD;
         insn[0].n = 2;
         insn[0].data = t1;
-        if (insn[0] is Instruction)
-            message ("insn[0] is Instruction");
         /* Instruction to do 10 analog input reads. */
         insn[1].insn = InstructionAttribute.READ;
         insn[1].n = 10;
@@ -39,17 +35,22 @@ public class InstructionAcquisition : GLib.Object {
         insn[2].n = 2;
         insn[2].data = t2;
 //        int ret = dev.do_insn (insn[1]);
-//        perror ("/dev/comedi0");
+//        perror ("/dev/comedi0 do_insn");
+
+        message ("insn.length: %d", insn.length);
+        il.n_insns = 3;
+        il.insns = insn;
 
         int ret = dev.do_insnlist (il);
         if (ret < 0) {
-            perror ("/dev/comedi0");
+            perror ("/dev/comedi0 do_insnlist");
         }
         message ("Initial time: %u.%06u\n", t1[0], t1[1]);
         for (int i = 0; i < 10; i++) {
             message ("%u", data[i]);
         }
         message ("Final time: %u.%06u\n", t2[0], t2[1]);
+        message ("Difference time (microseconds): %ld\n", (t2[0] - t1[0]) * 1000000 + (t2[1] -t1[1]));
     }
 }
 
