@@ -347,8 +347,8 @@ namespace Comedi {
         public uint data_len;
     }
 
-    [CCode (cname = "comedi_insn", cheader_filename = "comedi.h")]
-    public class Instruction {
+    [CCode (cname = "comedi_insn", cheader_filename = "comedi.h", destroy_function = "", has_copy_function = false)]
+    public struct Instruction {
         public uint insn;
         public uint n;
         public uint *data;
@@ -357,7 +357,7 @@ namespace Comedi {
         public uint unused[3];
     }
 
-    [CCode (cname = "comedi_insnlist", cheader_filename = "comedi.h")]
+    [CCode (cname = "comedi_insnlist", cheader_filename = "comedi.h", destroy_function = "")]
     public struct InstructionList {
         public uint n_insns;
         [CCode (array_length = false)]
