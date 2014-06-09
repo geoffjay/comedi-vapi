@@ -37,7 +37,7 @@ class AsynchAcquisition : GLib.Object {
 
     public void run () {
         /* open the device */
-        dev = new Device ("/dev/comedi0");
+        dev = new Device ("/dev/comedi1");
         subdevice = 0;
 
         // Print numbers for clipped inputs
